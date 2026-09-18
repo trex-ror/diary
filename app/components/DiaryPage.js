@@ -6,6 +6,7 @@ export default function DiaryPage({ page }) {
       {/* Render each item on the page */}
       {items.map((item) => {
         const commonStyle = {
+          position:  'absolute',
           left:      `${item.x}%`,
           top:       `${item.y}%`,
           width:     `${item.width}%`,
