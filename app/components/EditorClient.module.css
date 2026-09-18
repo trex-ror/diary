@@ -298,8 +298,11 @@
 /* The actual styled photo/note element fills 100% of wrapper */
 .innerItem {
   width: 100% !important;
-  height: 100% !important;
   position: relative;
+}
+/* Ensure photos still fill the container */
+.innerItem:not(.mem-note) {
+  height: 100% !important;
 }
 
 /* Selected state — subtle highlight border */
