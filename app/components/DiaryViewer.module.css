@@ -12,6 +12,7 @@
 .bookFrame {
   display: flex;
   align-items: stretch;
+  height: min(85vh, 700px); /* explicit height ensures flipContainer isn't 0px tall before init */
   filter:
     drop-shadow(0 30px 60px rgba(0,0,0,0.7))
     drop-shadow(0 8px 20px rgba(0,0,0,0.5));
