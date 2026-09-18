@@ -22,10 +22,7 @@ export default function DiaryPage({ page }) {
               className="mem-note"
               style={{ ...commonStyle, minHeight: '80px' }}
             >
-              <div 
-                className={`note-text-content ${fontClass}`}
-                style={{ fontFamily: item.font_family || 'Caveat, cursive' }}
-              >
+              <div className={`note-text-content ${fontClass}`}>
                 {item.note_text}
               </div>
             </div>

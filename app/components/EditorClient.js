@@ -89,7 +89,7 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, onEditN
     // Notes: natural height from content; photos: fixed aspect ratio
     ...(item.type === 'note'
       ? { minHeight: '80px' }
-      : { aspectRatio: item.template === 'polaroid' ? '3/4' : '4/3' }
+      : { aspectRatio: ['polaroid', 'vintage-date'].includes(item.template) ? '3/4' : '4/3' }
     ),
   };
 
@@ -114,7 +114,6 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, onEditN
         {item.type === 'note' && (
           <span 
             className={`note-text-content ${item.font_family ? 'font-' + item.font_family.toLowerCase().replace(/ /g, '-') : 'font-caveat'}`}
-            style={{ fontFamily: item.font_family || 'Caveat, cursive' }}
           >
             {item.note_text || '(catatan kosong)'}
           </span>
@@ -450,7 +449,7 @@ export default function EditorClient({ existingPages = [] }) {
           <label className={styles.label}>{editingNoteId ? 'Edit Catatan' : 'Tambah Catatan'}</label>
           <textarea
             className={styles.textArea}
-            style={{ fontFamily: fontFamily }}
+            style={{ fontFamily: `'${fontFamily}'` }}
             rows={4}
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
@@ -461,7 +460,7 @@ export default function EditorClient({ existingPages = [] }) {
               <button
                 key={f}
                 className={`${styles.fontBtn} ${fontFamily === f ? styles.active : ''}`}
-                style={{ fontFamily: f }}
+                style={{ fontFamily: `'${f}'` }}
                 onClick={() => setFontFamily(f)}
                 title={f}
               >

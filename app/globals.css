@@ -381,8 +381,8 @@ html, body {
 .serif-old   { font-family: 'IM Fell English', serif; }
 
 /* New Note Fonts */
-.font-caveat         { font-family: 'Caveat', cursive; }
-.font-indie-flower   { font-family: 'Indie Flower', cursive; }
-.font-shadows        { font-family: 'Shadows Into Light', cursive; }
-.font-patrick        { font-family: 'Patrick Hand', cursive; }
-.font-dancing        { font-family: 'Dancing Script', cursive; }
+.font-caveat              { font-family: 'Caveat', cursive; }
+.font-indie-flower        { font-family: 'Indie Flower', cursive; }
+.font-shadows-into-light  { font-family: 'Shadows Into Light', cursive; }
+.font-patrick-hand        { font-family: 'Patrick Hand', cursive; }
+.font-dancing-script      { font-family: 'Dancing Script', cursive; }
