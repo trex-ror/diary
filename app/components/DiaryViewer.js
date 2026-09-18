@@ -117,11 +117,21 @@ export default function DiaryViewer({ pages }) {
       </div>
 
       {/* Book frame */}
-      <div className={styles.bookFrame}>
+      <div 
+        className={styles.bookFrame}
+        style={{
+          transform: currentPage === 0 ? 'translateX(-25%)' : (currentPage >= totalPages - 1 ? 'translateX(25%)' : 'translateX(0)'),
+          transition: 'transform 0.5s ease-in-out'
+        }}
+      >
         {/* Left page stack */}
         <div
           className={styles.stackLeft}
-          style={{ width: `${Math.round(2 + 20 * (currentPage / Math.max(totalPages - 1, 1)))}px` }}
+          style={{ 
+            width: `${Math.round(2 + 20 * (currentPage / Math.max(totalPages - 1, 1)))}px`,
+            opacity: currentPage === 0 ? 0 : 1,
+            transition: 'width 0.5s ease, opacity 0.3s'
+          }}
         />
 
         {/* Flipbook container */}
@@ -130,7 +140,11 @@ export default function DiaryViewer({ pages }) {
         {/* Right page stack */}
         <div
           className={styles.stackRight}
-          style={{ width: `${Math.round(2 + 20 * (1 - currentPage / Math.max(totalPages - 1, 1)))}px` }}
+          style={{ 
+            width: `${Math.round(2 + 20 * (1 - currentPage / Math.max(totalPages - 1, 1)))}px`,
+            opacity: currentPage >= totalPages - 1 ? 0 : 1,
+            transition: 'width 0.5s ease, opacity 0.3s'
+          }}
         />
       </div>
 
