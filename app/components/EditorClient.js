@@ -144,7 +144,7 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, contain
           <button onMouseDown={onShrink}          title="Kecilkan">−</button>
           <button onMouseDown={onGrow}            title="Besarkan">+</button>
           {item.type === 'note' && (
-            <button onMouseDown={(e) => { e.stopPropagation(); setEditing(true); }} title="Edit">✎</button>
+            <button onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(true); }} title="Edit">✎</button>
           )}
           <button onMouseDown={onRemoveClick}     title="Hapus">✕</button>
         </div>
