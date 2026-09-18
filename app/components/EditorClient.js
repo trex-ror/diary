@@ -87,8 +87,11 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, contain
     transform: `rotate(${item.rotation || 0}deg)`,
     zIndex:    10,
     cursor:    'move',
-    // aspect ratio for photos so height scales with width
-    aspectRatio: item.type === 'note' ? 'auto' : (item.template === 'polaroid' ? '3/4' : '4/3'),
+    // Notes: natural height from content; photos: fixed aspect ratio
+    ...(item.type === 'note'
+      ? { minHeight: '80px' }
+      : { aspectRatio: item.template === 'polaroid' ? '3/4' : '4/3' }
+    ),
   };
 
   const templateClass = item.type === 'note'
