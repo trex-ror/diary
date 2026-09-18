@@ -254,6 +254,8 @@
   box-shadow:
     0 20px 50px rgba(0,0,0,0.5),
     0 4px 12px rgba(0,0,0,0.3);
+  /* Allow controls below items to show outside page bounds */
+  overflow: visible;
 }
 
 .emptyHint {
@@ -283,37 +285,45 @@
   position: relative;
 }
 
-/* Controls toolbar — always visible on hover of wrapper */
+/* Controls toolbar — always visible below the item */
 .itemControls {
   position: absolute;
-  top: -34px;
+  bottom: -40px;
   left: 50%;
   transform: translateX(-50%);
-  display: none;
+  display: flex;
   gap: 2px;
-  background: rgba(20, 14, 8, 0.90);
-  border: 1px solid rgba(200, 170, 100, 0.30);
-  border-radius: 20px;
-  padding: 4px 8px;
-  backdrop-filter: blur(10px);
+  background: rgba(15, 10, 5, 0.92);
+  border: 1px solid rgba(200, 170, 100, 0.35);
+  border-radius: 24px;
+  padding: 5px 10px;
+  backdrop-filter: blur(12px);
   z-index: 500;
   white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
 
-.draggableWrapper:hover .itemControls { display: flex; }
+.draggableWrapper:hover .itemControls,
+.itemControls { display: flex; }
 
 .itemControls button {
   background: none;
   border: none;
   color: rgba(255, 220, 140, 0.90);
   cursor: pointer;
-  font-size: 15px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 6px;
   transition: background 0.15s;
   line-height: 1;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.itemControls button:hover { background: rgba(200,170,100,0.18); }
+.itemControls button:hover { background: rgba(200,170,100,0.20); }
+.itemControls button:active { background: rgba(200,170,100,0.35); }
 
 /* Note inline edit textarea */
 .noteEditArea {
