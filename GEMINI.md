@@ -110,8 +110,9 @@ Bagian ini merekam hasil perbaikan bug (layout shift & garis hitam) dan kalibras
    - `showCover: true` diaktifkan agar halaman pertama dan terakhir tampil sebagai cover tunggal.
    - Efek *hover paper curl manual* yang dulu menyebabkan buku bergeser telah **dihapus**. Kita murni mengandalkan `showPageCorners: true` bawaan library.
 
-2. **Cover State Detection (Menghilangkan Garis Hitam):**
-   - Saat buku tertutup (di halaman 0 atau halaman terakhir), sebuah fungsi mendeteksi status ini dan otomatis **menyembunyikan garis tengah (spine) dan tumpukan kertas (stack)** via CSS (`opacity: 0`). Ini mencegah munculnya mark/garis hitam di sebelah buku saat mode satu halaman.
+2. **Cover State Detection & Book Centering:**
+   - Saat buku tertutup (di halaman 0 atau halaman terakhir), tumpukan kertas kiri/kanan disembunyikan secara dinamis via React state (`opacity: 0`) agar tidak terlihat garis lurus aneh di pinggir layar.
+   - Karena mode tertutup hanya memakan setengah layar (`pageW`), kontainer buku (`.bookFrame`) akan digeser secara otomatis menggunakan `transform: translateX(-25%)` (atau `25%` untuk back cover). Hal ini menjaga posisi buku tetap presisi berada tepat di **tengah layar**, bukan berat sebelah.
 
 3. **Ketebalan Tumpukan Kertas (Page Stacks):**
    - Di kiri dan kanan buku, terdapat elemen visual (`.stackLeft` dan `.stackRight`) yang merepresentasikan ketebalan kertas.
