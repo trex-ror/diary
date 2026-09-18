@@ -3,6 +3,10 @@
 -- Paste ini di: Supabase Dashboard → SQL Editor → New Query
 -- ============================================================
 
+-- MIGRATION: RUN THESE TWO LINES IF UPDATING FROM PREVIOUS VERSION
+ALTER TABLE items ADD COLUMN IF NOT EXISTS font_family TEXT DEFAULT 'Caveat';
+ALTER TABLE items DROP CONSTRAINT IF EXISTS items_template_check;
+
 -- 1. Tabel PAGES (setiap halaman diary)
 CREATE TABLE IF NOT EXISTS pages (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -16,7 +20,8 @@ CREATE TABLE IF NOT EXISTS items (
   page_id     UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
   type        TEXT NOT NULL CHECK (type IN ('photo', 'video', 'note')),
   file_url    TEXT,
-  template    TEXT DEFAULT 'polaroid' CHECK (template IN ('polaroid', 'taped', 'vintage', 'plain')),
+  template    TEXT DEFAULT 'polaroid',
+  font_family TEXT DEFAULT 'Caveat',
   x           FLOAT NOT NULL DEFAULT 10,
   y           FLOAT NOT NULL DEFAULT 10,
   rotation    FLOAT NOT NULL DEFAULT 0,

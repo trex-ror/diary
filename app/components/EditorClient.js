@@ -8,11 +8,10 @@ import PinGate from './PinGate';
 const EDITOR_PIN = process.env.NEXT_PUBLIC_EDITOR_PIN || '1234';
 
 // ── Photo item with draggable/rotatable state ──────────────────────
-function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, containerRef }) {
+function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, onEditNote, containerRef }) {
   const itemRef    = useRef(null);
   const dragging   = useRef(false);
   const startData  = useRef({});
-  const [editing, setEditing] = useState(false); // for notes
 
   // ── Drag (move) ──
   const onMouseDown = (e) => {
@@ -112,19 +111,13 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, contain
     >
       {/* Actual styled element */}
       <div className={`${templateClass} ${styles.innerItem}`}>
-        {item.type === 'note' && !editing && (
-          <span className="note-text-content">{item.note_text || '(catatan kosong)'}</span>
-        )}
-        {item.type === 'note' && editing && (
-          <textarea
-            className={`note-text-content ${styles.noteEditArea}`}
-            defaultValue={item.note_text}
-            autoFocus
-            onBlur={(e) => {
-              onUpdate({ note_text: e.target.value });
-              setEditing(false);
-            }}
-          />
+        {item.type === 'note' && (
+          <span 
+            className={`note-text-content ${item.font_family ? 'font-' + item.font_family.toLowerCase().replace(/ /g, '-') : 'font-caveat'}`}
+            style={{ fontFamily: item.font_family || 'Caveat, cursive' }}
+          >
+            {item.note_text || '(catatan kosong)'}
+          </span>
         )}
         {item.type === 'photo' && (
           <img className="mem-img" src={item.previewUrl} alt="" />
@@ -144,7 +137,7 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, contain
           <button onMouseDown={onShrink}          title="Kecilkan">−</button>
           <button onMouseDown={onGrow}            title="Besarkan">+</button>
           {item.type === 'note' && (
-            <button onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); setEditing(true); }} title="Edit">✎</button>
+            <button onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onEditNote(); }} title="Edit">✎</button>
           )}
           <button onMouseDown={onRemoveClick}     title="Hapus">✕</button>
         </div>
@@ -160,7 +153,13 @@ export default function EditorClient({ existingPages = [] }) {
   const [selectedId,     setSelectedId]     = useState(null);
   const [editingPageId,  setEditingPageId]  = useState('new');
   const [deletedItemIds, setDeletedItemIds] = useState([]);
+  
+  // Note creation/editing state
+  const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteText,   setNoteText]   = useState('');
+  const [fontFamily, setFontFamily] = useState('Caveat');
+  
+  // Photo creation state
   const [caption,   setCaption]   = useState('');
   const [template,  setTemplate]  = useState('polaroid');
   const [isSaving,  setIsSaving]  = useState(false);
@@ -191,19 +190,42 @@ export default function EditorClient({ existingPages = [] }) {
     e.target.value = '';
   };
 
-  // ── Add note ──
-  const handleNoteAdd = () => {
-    if (!noteText.trim()) return;
-    setItems(prev => [...prev, {
-      id:        Date.now(),
-      type:      'note',
-      note_text: noteText,
-      x:         20,
-      y:         20,
-      rotation:  Math.round((Math.random() - 0.5) * 6),
-      width:     45,
-    }]);
+  // ── Add or Update Note ──
+  const handleNoteSave = () => {
+    if (!noteText.trim()) {
+      setEditingNoteId(null);
+      return;
+    }
+    
+    if (editingNoteId) {
+      updateItem(editingNoteId, { note_text: noteText, font_family: fontFamily });
+      setEditingNoteId(null);
+    } else {
+      setItems(prev => [...prev, {
+        id:          Date.now(),
+        type:        'note',
+        note_text:   noteText,
+        font_family: fontFamily,
+        x:           20,
+        y:           20,
+        rotation:    Math.round((Math.random() - 0.5) * 6),
+        width:       45,
+      }]);
+    }
     setNoteText('');
+    setFontFamily('Caveat');
+  };
+
+  const handleEditNote = (item) => {
+    setEditingNoteId(item.id);
+    setNoteText(item.note_text || '');
+    setFontFamily(item.font_family || 'Caveat');
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setNoteText('');
+    setFontFamily('Caveat');
   };
 
   const updateItem = (id, patch) => {
@@ -306,13 +328,14 @@ export default function EditorClient({ existingPages = [] }) {
           page_id:   pageId,
           type:      item.type,
           file_url,
-          template:  item.template || 'polaroid',
-          x:         item.x,
-          y:         item.y,
-          rotation:  item.rotation,
-          width:     item.width,
-          caption:   item.caption || '',
-          note_text: item.note_text || '',
+          template:    item.template || 'polaroid',
+          font_family: item.font_family || 'Caveat',
+          x:           item.x,
+          y:           item.y,
+          rotation:    item.rotation,
+          width:       item.width,
+          caption:     item.caption || '',
+          note_text:   item.note_text || '',
         };
 
         if (typeof item.id === 'string') {
@@ -382,7 +405,7 @@ export default function EditorClient({ existingPages = [] }) {
         <section className={styles.section}>
           <label className={styles.label}>Style Foto</label>
           <div className={styles.templateBtns}>
-            {['polaroid', 'vintage', 'taped', 'plain'].map(t => (
+            {['polaroid', 'vintage', 'vintage-date', 'film', 'taped', 'plain'].map(t => (
               <button
                 key={t}
                 className={`${styles.templateBtn} ${template === t ? styles.active : ''}`}
@@ -422,17 +445,38 @@ export default function EditorClient({ existingPages = [] }) {
           <p className={styles.hint}>Video max 5 detik, ukuran kecil</p>
         </section>
 
-        {/* Note input */}
+        {/* Note input / edit */}
         <section className={styles.section}>
-          <label className={styles.label}>Tambah Catatan</label>
+          <label className={styles.label}>{editingNoteId ? 'Edit Catatan' : 'Tambah Catatan'}</label>
           <textarea
             className={styles.textArea}
+            style={{ fontFamily: fontFamily }}
             rows={4}
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             placeholder="Tulis sesuatu yang kamu rasakan..."
           />
-          <button className={styles.noteBtn} onClick={handleNoteAdd}>+ Tambahkan Catatan</button>
+          <div className={styles.templateBtns} style={{ marginTop: '8px' }}>
+            {['Caveat', 'Indie Flower', 'Shadows Into Light', 'Patrick Hand', 'Dancing Script'].map(f => (
+              <button
+                key={f}
+                className={`${styles.fontBtn} ${fontFamily === f ? styles.active : ''}`}
+                style={{ fontFamily: f }}
+                onClick={() => setFontFamily(f)}
+                title={f}
+              >
+                Aa
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <button className={styles.noteBtn} style={{ flex: 1 }} onClick={handleNoteSave}>
+              {editingNoteId ? '✓ Update Catatan' : '+ Tambahkan Catatan'}
+            </button>
+            {editingNoteId && (
+              <button className={styles.noteBtn} onClick={cancelEditNote}>Batal</button>
+            )}
+          </div>
         </section>
 
         {/* Item list preview */}
@@ -489,10 +533,11 @@ export default function EditorClient({ existingPages = [] }) {
               key={item.id}
               item={item}
               isSelected={selectedId === item.id}
-              onSelect={() => setSelectedId(item.id)}
+              onSelect={() => { setSelectedId(item.id); if (item.type !== 'note') cancelEditNote(); }}
               containerRef={pageCanvasRef}
               onUpdate={(patch) => updateItem(item.id, patch)}
-              onRemove={() => { removeItem(item.id); setSelectedId(null); }}
+              onRemove={() => { removeItem(item.id); setSelectedId(null); if (editingNoteId === item.id) cancelEditNote(); }}
+              onEditNote={() => handleEditNote(item)}
             />
           ))}
         </div>

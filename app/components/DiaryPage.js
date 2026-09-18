@@ -15,13 +15,19 @@ export default function DiaryPage({ page }) {
         };
 
         if (item.type === 'note') {
+          const fontClass = item.font_family ? 'font-' + item.font_family.toLowerCase().replace(/ /g, '-') : 'font-caveat';
           return (
             <div
               key={item.id}
               className="mem-note"
               style={{ ...commonStyle, minHeight: '80px' }}
             >
-              <div className="note-text-content">{item.note_text}</div>
+              <div 
+                className={`note-text-content ${fontClass}`}
+                style={{ fontFamily: item.font_family || 'Caveat, cursive' }}
+              >
+                {item.note_text}
+              </div>
             </div>
           );
         }

@@ -149,6 +149,23 @@
   color: rgba(255, 230, 160, 0.95);
 }
 
+/* Font selector */
+.fontBtn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(200, 170, 100, 0.18);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 16px;
+  color: rgba(200, 170, 100, 0.7);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fontBtn:hover, .fontBtn.active {
+  background: rgba(139, 99, 71, 0.4);
+  border-color: rgba(200, 170, 100, 0.45);
+  color: rgba(255, 230, 160, 0.95);
+}
+
 /* Inputs */
 .textInput, .textArea, .pageSelect {
   background: rgba(255,255,255,0.05);
