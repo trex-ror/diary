@@ -285,10 +285,17 @@
   position: relative;
 }
 
-/* Controls toolbar — always visible below the item */
+/* Selected state — subtle highlight border */
+.selected {
+  outline: 2px solid rgba(200, 170, 100, 0.55);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* Controls toolbar — rendered only when isSelected (controlled by React) */
 .itemControls {
   position: absolute;
-  bottom: -40px;
+  bottom: -46px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -302,9 +309,6 @@
   white-space: nowrap;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
-
-.draggableWrapper:hover .itemControls,
-.itemControls { display: flex; }
 
 .itemControls button {
   background: none;
@@ -322,7 +326,7 @@
   align-items: center;
   justify-content: center;
 }
-.itemControls button:hover { background: rgba(200,170,100,0.20); }
+.itemControls button:hover  { background: rgba(200,170,100,0.20); }
 .itemControls button:active { background: rgba(200,170,100,0.35); }
 
 /* Note inline edit textarea */

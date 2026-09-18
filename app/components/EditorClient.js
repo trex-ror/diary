@@ -8,7 +8,7 @@ import PinGate from './PinGate';
 const EDITOR_PIN = process.env.NEXT_PUBLIC_EDITOR_PIN || '1234';
 
 // ── Photo item with draggable/rotatable state ──────────────────────
-function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
+function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, containerRef }) {
   const itemRef    = useRef(null);
   const dragging   = useRef(false);
   const startData  = useRef({});
@@ -16,6 +16,8 @@ function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
 
   // ── Drag (move) ──
   const onMouseDown = (e) => {
+    // Select this item on click
+    onSelect();
     // Don't start drag when clicking control buttons or textarea
     if (e.target.closest(`.${styles.itemControls}`) || e.target.tagName === 'TEXTAREA') return;
     dragging.current = true;
@@ -98,7 +100,7 @@ function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
   return (
     <div
       ref={itemRef}
-      className={`${styles.draggableWrapper}`}
+      className={`${styles.draggableWrapper} ${isSelected ? styles.selected : ''}`}
       style={style}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
@@ -132,25 +134,28 @@ function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
         )}
       </div>
 
-      {/* Controls toolbar */}
-      <div className={styles.itemControls}>
-        <button onMouseDown={onRotateMouseDown} title="Putar">↻</button>
-        <button onMouseDown={onShrink}          title="Kecilkan">−</button>
-        <button onMouseDown={onGrow}            title="Besarkan">+</button>
-        {item.type === 'note' && (
-          <button onMouseDown={(e) => { e.stopPropagation(); setEditing(true); }} title="Edit">✎</button>
-        )}
-        <button onMouseDown={onRemoveClick}     title="Hapus">✕</button>
-      </div>
+      {/* Controls — only visible when selected */}
+      {isSelected && (
+        <div className={styles.itemControls}>
+          <button onMouseDown={onRotateMouseDown} title="Putar">↻</button>
+          <button onMouseDown={onShrink}          title="Kecilkan">−</button>
+          <button onMouseDown={onGrow}            title="Besarkan">+</button>
+          {item.type === 'note' && (
+            <button onMouseDown={(e) => { e.stopPropagation(); setEditing(true); }} title="Edit">✎</button>
+          )}
+          <button onMouseDown={onRemoveClick}     title="Hapus">✕</button>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Main Editor Component ──────────────────────────────────────────
 export default function EditorClient() {
-  const [unlocked,  setUnlocked]  = useState(false);
-  const [items,     setItems]     = useState([]);
-  const [noteText,  setNoteText]  = useState('');
+  const [unlocked,   setUnlocked]   = useState(false);
+  const [items,      setItems]      = useState([]);
+  const [selectedId, setSelectedId] = useState(null);  // which item is selected
+  const [noteText,   setNoteText]   = useState('');
   const [caption,   setCaption]   = useState('');
   const [template,  setTemplate]  = useState('polaroid');
   const [isSaving,  setIsSaving]  = useState(false);
@@ -385,9 +390,16 @@ export default function EditorClient() {
         <a href="/" className={styles.viewerLink}>← Lihat Diary</a>
       </aside>
 
-      {/* Page canvas */}
+      {/* Page canvas — click empty area to deselect */}
       <main className={styles.canvas}>
-        <div ref={pageCanvasRef} className={`${styles.pagePreview} diary-page has-grid`}>
+        <div
+          ref={pageCanvasRef}
+          className={`${styles.pagePreview} diary-page has-grid`}
+          onMouseDown={(e) => {
+            // deselect if clicking directly on canvas (not on an item)
+            if (e.target === pageCanvasRef.current) setSelectedId(null);
+          }}
+        >
           {items.length === 0 && (
             <div className={styles.emptyHint}>
               Upload foto, video, atau tambah catatan →
@@ -397,9 +409,11 @@ export default function EditorClient() {
             <DraggableItem
               key={item.id}
               item={item}
+              isSelected={selectedId === item.id}
+              onSelect={() => setSelectedId(item.id)}
               containerRef={pageCanvasRef}
               onUpdate={(patch) => updateItem(item.id, patch)}
-              onRemove={() => removeItem(item.id)}
+              onRemove={() => { removeItem(item.id); setSelectedId(null); }}
             />
           ))}
         </div>
