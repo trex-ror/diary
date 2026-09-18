@@ -18,8 +18,10 @@ export default function DiaryViewer({ pages }) {
   const [unlocked, setUnlocked]       = useState(false);
   const totalPages = pages.length + 2;
 
-  // Load StPageFlip from CDN
+  // Load StPageFlip from CDN — only after user unlocks (viewer DOM must exist)
   useEffect(() => {
+    if (!unlocked) return;   // ← jangan init sebelum PIN benar
+
     if (document.getElementById('stf-script')) {
       initFlipbook();
       return;
@@ -29,7 +31,7 @@ export default function DiaryViewer({ pages }) {
     script.src = 'https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js';
     script.onload = initFlipbook;
     document.head.appendChild(script);
-  }, []);
+  }, [unlocked]);   // ← re-run saat unlocked berubah menjadi true
 
   function initFlipbook() {
     if (!containerRef.current || pageFlipRef.current) return;
