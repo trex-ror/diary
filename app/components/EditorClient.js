@@ -154,10 +154,12 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, contain
 }
 
 // ── Main Editor Component ──────────────────────────────────────────
-export default function EditorClient() {
-  const [unlocked,   setUnlocked]   = useState(false);
-  const [items,      setItems]      = useState([]);
-  const [selectedId, setSelectedId] = useState(null);  // which item is selected
+export default function EditorClient({ existingPages = [] }) {
+  const [unlocked,       setUnlocked]       = useState(false);
+  const [items,          setItems]          = useState([]);
+  const [selectedId,     setSelectedId]     = useState(null);
+  const [editingPageId,  setEditingPageId]  = useState('new');
+  const [deletedItemIds, setDeletedItemIds] = useState([]);
   const [noteText,   setNoteText]   = useState('');
   const [caption,   setCaption]   = useState('');
   const [template,  setTemplate]  = useState('polaroid');
@@ -209,7 +211,32 @@ export default function EditorClient() {
   };
 
   const removeItem = (id) => {
+    if (typeof id === 'string') {
+      setDeletedItemIds(prev => [...prev, id]);
+    }
     setItems(prev => prev.filter(it => it.id !== id));
+  };
+
+  const handleModeChange = (e) => {
+    const val = e.target.value;
+    setEditingPageId(val);
+    setDeletedItemIds([]);
+    setSelectedId(null);
+    setSaveMsg('');
+    
+    if (val === 'new') {
+      setItems([]);
+    } else {
+      const page = existingPages.find(p => p.id === val);
+      if (page && page.items) {
+        setItems(page.items.map(it => ({
+          ...it,
+          previewUrl: it.file_url
+        })));
+      } else {
+        setItems([]);
+      }
+    }
   };
 
   // ── Save page to Supabase ──
@@ -219,34 +246,54 @@ export default function EditorClient() {
     setSaveMsg('');
 
     try {
-      // 1. Get next page number
-      const { data: existing, error: fetchErr } = await supabase
-        .from('pages')
-        .select('page_number')
-        .order('page_number', { ascending: false })
-        .limit(1);
+      let pageId;
+      let nextNum;
 
-      if (fetchErr) throw new Error(`Koneksi DB gagal: ${fetchErr.message}`);
-      const nextNum = (existing?.[0]?.page_number ?? 0) + 1;
+      if (editingPageId === 'new') {
+        // 1. Get next page number
+        const { data: existing, error: fetchErr } = await supabase
+          .from('pages')
+          .select('page_number')
+          .order('page_number', { ascending: false })
+          .limit(1);
 
-      // 2. Insert new page
-      const { data: newPage, error: pageErr } = await supabase
-        .from('pages')
-        .insert({ page_number: nextNum })
-        .select()
-        .single();
-      if (pageErr) throw new Error(`Gagal buat halaman: ${pageErr.message}`);
+        if (fetchErr) throw new Error(`Koneksi DB gagal: ${fetchErr.message}`);
+        nextNum = (existing?.[0]?.page_number ?? 0) + 1;
 
-      // 3. Upload files + insert items
+        // 2. Insert new page
+        const { data: newPage, error: pageErr } = await supabase
+          .from('pages')
+          .insert({ page_number: nextNum })
+          .select()
+          .single();
+        if (pageErr) throw new Error(`Gagal buat halaman: ${pageErr.message}`);
+        
+        pageId = newPage.id;
+      } else {
+        pageId = editingPageId;
+        const p = existingPages.find(x => x.id === pageId);
+        nextNum = p ? p.page_number : '?';
+
+        // Delete removed items
+        if (deletedItemIds.length > 0) {
+          const { error: delErr } = await supabase
+            .from('items')
+            .delete()
+            .in('id', deletedItemIds);
+          if (delErr) console.error('Gagal hapus item lama:', delErr);
+        }
+      }
+
+      // 3. Upload files + insert/update items
       for (const item of items) {
-        let file_url = null;
+        let file_url = item.file_url || null;
 
         if (item.file) {
           const ext  = item.file.name.split('.').pop();
-          const path = `${newPage.id}/${item.id}.${ext}`;
+          const path = `${pageId}/${item.id}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from('diary-media')
-            .upload(path, item.file, { cacheControl: '3600', upsert: false });
+            .upload(path, item.file, { cacheControl: '3600', upsert: true });
           if (upErr) throw new Error(`Upload gagal: ${upErr.message}`);
 
           const { data: urlData } = supabase.storage
@@ -255,25 +302,37 @@ export default function EditorClient() {
           file_url = urlData.publicUrl;
         }
 
-        const { error: itemErr } = await supabase
-          .from('items')
-          .insert({
-            page_id:   newPage.id,
-            type:      item.type,
-            file_url,
-            template:  item.template || 'polaroid',
-            x:         item.x,
-            y:         item.y,
-            rotation:  item.rotation,
-            width:     item.width,
-            caption:   item.caption || '',
-            note_text: item.note_text || '',
-          });
-        if (itemErr) throw new Error(`Gagal simpan item: ${itemErr.message}`);
+        const payload = {
+          page_id:   pageId,
+          type:      item.type,
+          file_url,
+          template:  item.template || 'polaroid',
+          x:         item.x,
+          y:         item.y,
+          rotation:  item.rotation,
+          width:     item.width,
+          caption:   item.caption || '',
+          note_text: item.note_text || '',
+        };
+
+        if (typeof item.id === 'string') {
+          // Update existing
+          const { error: itemErr } = await supabase
+            .from('items')
+            .update(payload)
+            .eq('id', item.id);
+          if (itemErr) throw new Error(`Gagal update item: ${itemErr.message}`);
+        } else {
+          // Insert new
+          const { error: itemErr } = await supabase
+            .from('items')
+            .insert(payload);
+          if (itemErr) throw new Error(`Gagal simpan item baru: ${itemErr.message}`);
+        }
       }
 
       setSaveMsg(`✅ Halaman ${nextNum} berhasil disimpan!`);
-      setItems([]);
+      if (editingPageId === 'new') setItems([]);
     } catch (err) {
       console.error('Save error:', err);
       setSaveMsg(`❌ ${err.message}`);
@@ -300,7 +359,24 @@ export default function EditorClient() {
     <div className={styles.editorRoot}>
       {/* Sidebar */}
       <aside className={styles.sidebar}>
-        <div className={styles.sidebarTitle}>📔 Tambah Kenangan</div>
+        <div className={styles.sidebarTitle}>📔 Editor</div>
+
+        {/* Page selector */}
+        <section className={styles.section}>
+          <label className={styles.label}>Mode Halaman</label>
+          <select 
+            className={styles.pageSelect} 
+            value={editingPageId} 
+            onChange={handleModeChange}
+          >
+            <option value="new">📝 Buat Halaman Baru</option>
+            {existingPages.map(p => (
+              <option key={p.id} value={p.id}>
+                ✏️ Edit Halaman {p.page_number}
+              </option>
+            ))}
+          </select>
+        </section>
 
         {/* Template selector */}
         <section className={styles.section}>

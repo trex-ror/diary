@@ -42,6 +42,10 @@ CREATE POLICY "Public read items"  ON items FOR SELECT USING (true);
 CREATE POLICY "Public insert pages" ON pages FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public insert items" ON items FOR INSERT WITH CHECK (true);
 
+-- Semua orang bisa UPDATE dan DELETE items (keamanan dijaga oleh PIN di frontend)
+CREATE POLICY "Public update items" ON items FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public delete items" ON items FOR DELETE USING (true);
+
 -- 5. Storage Bucket — jalankan di SQL Editor
 -- PENTING: Buat bucket "diary-media" dulu di:
 -- Storage → New Bucket → Name: diary-media → Public: ON
@@ -65,3 +69,9 @@ CREATE POLICY "Public upload diary-media"
 CREATE POLICY "Public read diary-media"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'diary-media');
+
+-- Policy storage: semua orang bisa hapus file publik (untuk cleanup saat edit)
+CREATE POLICY "Public delete diary-media"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'diary-media');
+
