@@ -15,14 +15,14 @@ CREATE TABLE IF NOT EXISTS items (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   page_id     UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
   type        TEXT NOT NULL CHECK (type IN ('photo', 'video', 'note')),
-  file_url    TEXT,                   -- URL dari Supabase Storage (untuk photo/video)
+  file_url    TEXT,
   template    TEXT DEFAULT 'polaroid' CHECK (template IN ('polaroid', 'taped', 'vintage', 'plain')),
-  x           FLOAT NOT NULL DEFAULT 10,   -- posisi X dalam %
-  y           FLOAT NOT NULL DEFAULT 10,   -- posisi Y dalam %
-  rotation    FLOAT NOT NULL DEFAULT 0,    -- rotasi dalam derajat
-  width       FLOAT NOT NULL DEFAULT 40,   -- lebar dalam %
+  x           FLOAT NOT NULL DEFAULT 10,
+  y           FLOAT NOT NULL DEFAULT 10,
+  rotation    FLOAT NOT NULL DEFAULT 0,
+  width       FLOAT NOT NULL DEFAULT 40,
   caption     TEXT DEFAULT '',
-  note_text   TEXT DEFAULT '',             -- isi catatan (untuk type=note)
+  note_text   TEXT DEFAULT '',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -30,19 +30,38 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE INDEX IF NOT EXISTS idx_items_page_id ON items(page_id);
 CREATE INDEX IF NOT EXISTS idx_pages_number  ON pages(page_number);
 
--- 4. Storage Bucket (jalankan terpisah setelah tabel dibuat)
--- Di Supabase Dashboard → Storage → New Bucket
--- Name: "diary-media"
--- Public: true
--- File size limit: 10MB
--- Allowed MIME types: image/*, video/mp4, video/webm
-
--- 5. RLS (Row Level Security) — buat data bisa dibaca publik
+-- 4. RLS (Row Level Security)
 ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public read pages" ON pages FOR SELECT USING (true);
-CREATE POLICY "Public read items" ON items FOR SELECT USING (true);
+-- Semua orang bisa READ (untuk viewer)
+CREATE POLICY "Public read pages"  ON pages FOR SELECT USING (true);
+CREATE POLICY "Public read items"  ON items FOR SELECT USING (true);
 
--- Untuk INSERT/UPDATE, kita gunakan service role key di server side
--- sehingga hanya editor (dengan PIN) yang bisa menulis.
+-- Semua orang bisa INSERT (keamanan dijaga oleh PIN di frontend)
+CREATE POLICY "Public insert pages" ON pages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert items" ON items FOR INSERT WITH CHECK (true);
+
+-- 5. Storage Bucket — jalankan di SQL Editor
+-- PENTING: Buat bucket "diary-media" dulu di:
+-- Storage → New Bucket → Name: diary-media → Public: ON
+-- Lalu jalankan policy di bawah ini:
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'diary-media',
+  'diary-media',
+  true,
+  10485760,  -- 10 MB limit
+  ARRAY['image/jpeg','image/png','image/gif','image/webp','video/mp4','video/webm']
+) ON CONFLICT (id) DO NOTHING;
+
+-- Policy storage: semua orang bisa upload (keamanan dijaga PIN di frontend)
+CREATE POLICY "Public upload diary-media"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'diary-media');
+
+-- Policy storage: semua orang bisa baca file publik
+CREATE POLICY "Public read diary-media"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'diary-media');

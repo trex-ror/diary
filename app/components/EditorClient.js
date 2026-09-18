@@ -9,12 +9,15 @@ const EDITOR_PIN = process.env.NEXT_PUBLIC_EDITOR_PIN || '1234';
 
 // ── Photo item with draggable/rotatable state ──────────────────────
 function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
-  const itemRef   = useRef(null);
-  const dragging  = useRef(false);
-  const startData = useRef({});
+  const itemRef    = useRef(null);
+  const dragging   = useRef(false);
+  const startData  = useRef({});
+  const [editing, setEditing] = useState(false); // for notes
 
+  // ── Drag (move) ──
   const onMouseDown = (e) => {
-    if (e.target.classList.contains('rotate-handle')) return;
+    // Don't start drag when clicking control buttons or textarea
+    if (e.target.closest(`.${styles.itemControls}`) || e.target.tagName === 'TEXTAREA') return;
     dragging.current = true;
     const rect = containerRef.current.getBoundingClientRect();
     startData.current = {
@@ -38,13 +41,13 @@ function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
 
   const onMouseUp = () => { dragging.current = false; };
 
-  // Rotate handle drag
+  // ── Rotate handle ──
   const onRotateMouseDown = (e) => {
     e.stopPropagation();
+    e.preventDefault();
     const rect = itemRef.current.getBoundingClientRect();
     const cx   = rect.left + rect.width  / 2;
     const cy   = rect.top  + rect.height / 2;
-
     const move = (ev) => {
       const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI) + 90;
       onUpdate({ rotation: Math.round(angle) });
@@ -57,49 +60,87 @@ function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
     window.addEventListener('mouseup', up);
   };
 
+  // ── Resize ──
+  const onShrink = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onUpdate({ width: Math.max(15, (item.width || 42) - 5) });
+  };
+  const onGrow = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onUpdate({ width: Math.min(95, (item.width || 42) + 5) });
+  };
+  const onRemoveClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onRemove();
+  };
+
   const style = {
-    position: 'absolute',
+    position:  'absolute',
     left:      `${item.x}%`,
     top:       `${item.y}%`,
-    width:     `${item.width}%`,
-    transform: `rotate(${item.rotation}deg)`,
+    width:     `${item.width || 42}%`,
+    transform: `rotate(${item.rotation || 0}deg)`,
     zIndex:    10,
     cursor:    'move',
+    // aspect ratio for photos so height scales with width
+    aspectRatio: item.type === 'note' ? 'auto' : (item.template === 'polaroid' ? '3/4' : '4/3'),
   };
 
   const templateClass = item.type === 'note'
     ? 'mem-note'
     : item.type === 'video'
       ? 'mem-video mem-photo'
-      : `mem-photo photo-${item.template}`;
+      : `mem-photo photo-${item.template || 'polaroid'}`;
 
   return (
     <div
       ref={itemRef}
-      className={`${styles.draggableItem} ${templateClass}`}
+      className={`${styles.draggableWrapper}`}
       style={style}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
     >
-      {item.type === 'note' && <span>{item.note_text || '(catatan kosong)'}</span>}
-      {item.type === 'photo' && (
-        <img className="mem-img" src={item.previewUrl} alt="" />
-      )}
-      {item.type === 'video' && (
-        <video src={item.previewUrl} autoPlay loop muted playsInline />
-      )}
-      {item.type === 'polaroid' && item.caption && (
-        <div className="mem-caption">{item.caption}</div>
-      )}
+      {/* Actual styled element */}
+      <div className={`${templateClass} ${styles.innerItem}`}>
+        {item.type === 'note' && !editing && (
+          <span>{item.note_text || '(catatan kosong)'}</span>
+        )}
+        {item.type === 'note' && editing && (
+          <textarea
+            className={styles.noteEditArea}
+            defaultValue={item.note_text}
+            autoFocus
+            onBlur={(e) => {
+              onUpdate({ note_text: e.target.value });
+              setEditing(false);
+            }}
+          />
+        )}
+        {item.type === 'photo' && (
+          <img className="mem-img" src={item.previewUrl} alt="" />
+        )}
+        {item.type === 'video' && (
+          <video src={item.previewUrl} autoPlay loop muted playsInline />
+        )}
+        {item.type === 'photo' && item.template === 'polaroid' && item.caption && (
+          <div className="mem-caption">{item.caption}</div>
+        )}
+      </div>
 
-      {/* Controls overlay */}
+      {/* Controls toolbar */}
       <div className={styles.itemControls}>
-        <button className="rotate-handle" onMouseDown={onRotateMouseDown} title="Putar">↻</button>
-        <button onClick={() => onUpdate({ width: Math.max(15, item.width - 5) })} title="Kecilkan">−</button>
-        <button onClick={() => onUpdate({ width: Math.min(90, item.width + 5) })} title="Besarkan">+</button>
-        <button onClick={onRemove} title="Hapus">✕</button>
+        <button onMouseDown={onRotateMouseDown} title="Putar">↻</button>
+        <button onMouseDown={onShrink}          title="Kecilkan">−</button>
+        <button onMouseDown={onGrow}            title="Besarkan">+</button>
+        {item.type === 'note' && (
+          <button onMouseDown={(e) => { e.stopPropagation(); setEditing(true); }} title="Edit">✎</button>
+        )}
+        <button onMouseDown={onRemoveClick}     title="Hapus">✕</button>
       </div>
     </div>
   );
@@ -107,48 +148,32 @@ function DraggableItem({ item, onUpdate, onRemove, containerRef }) {
 
 // ── Main Editor Component ──────────────────────────────────────────
 export default function EditorClient() {
-  const [pin,       setPin]       = useState('');
   const [unlocked,  setUnlocked]  = useState(false);
-  const [pinError,  setPinError]  = useState('');
-
-  const [items,       setItems]       = useState([]);     // items on current draft page
-  const [noteText,    setNoteText]    = useState('');
-  const [caption,     setCaption]     = useState('');
-  const [template,    setTemplate]    = useState('polaroid');
-  const [isSaving,    setIsSaving]    = useState(false);
-  const [saveMsg,     setSaveMsg]     = useState('');
+  const [items,     setItems]     = useState([]);
+  const [noteText,  setNoteText]  = useState('');
+  const [caption,   setCaption]   = useState('');
+  const [template,  setTemplate]  = useState('polaroid');
+  const [isSaving,  setIsSaving]  = useState(false);
+  const [saveMsg,   setSaveMsg]   = useState('');
 
   const pageCanvasRef = useRef(null);
   const fileInputRef  = useRef(null);
-
-  // ── PIN check ──
-  const handlePinSubmit = (e) => {
-    e.preventDefault();
-    if (pin === EDITOR_PIN) {
-      setUnlocked(true);
-    } else {
-      setPinError('PIN salah. Coba lagi.');
-      setPin('');
-    }
-  };
 
   // ── Add file (photo or video) ──
   const handleFileAdd = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const isVideo = file.type.startsWith('video/');
     const previewUrl = URL.createObjectURL(file);
-
     setItems(prev => [...prev, {
       id:         Date.now(),
       type:       isVideo ? 'video' : 'photo',
       template,
       file,
       previewUrl,
-      x:          15,
-      y:          15,
-      rotation:   Math.round((Math.random() - 0.5) * 12), // slight random tilt
+      x:          10,
+      y:          10,
+      rotation:   Math.round((Math.random() - 0.5) * 10),
       width:      42,
       caption,
     }]);
@@ -160,23 +185,21 @@ export default function EditorClient() {
   const handleNoteAdd = () => {
     if (!noteText.trim()) return;
     setItems(prev => [...prev, {
-      id:       Date.now(),
-      type:     'note',
+      id:        Date.now(),
+      type:      'note',
       note_text: noteText,
-      x:        20,
-      y:        20,
-      rotation: Math.round((Math.random() - 0.5) * 6),
-      width:    45,
+      x:         20,
+      y:         20,
+      rotation:  Math.round((Math.random() - 0.5) * 6),
+      width:     45,
     }]);
     setNoteText('');
   };
 
-  // ── Update item property ──
   const updateItem = (id, patch) => {
     setItems(prev => prev.map(it => it.id === id ? { ...it, ...patch } : it));
   };
 
-  // ── Remove item ──
   const removeItem = (id) => {
     setItems(prev => prev.filter(it => it.id !== id));
   };
@@ -189,11 +212,13 @@ export default function EditorClient() {
 
     try {
       // 1. Get next page number
-      const { data: existing } = await supabase
+      const { data: existing, error: fetchErr } = await supabase
         .from('pages')
         .select('page_number')
         .order('page_number', { ascending: false })
         .limit(1);
+
+      if (fetchErr) throw new Error(`Koneksi DB gagal: ${fetchErr.message}`);
       const nextNum = (existing?.[0]?.page_number ?? 0) + 1;
 
       // 2. Insert new page
@@ -202,19 +227,19 @@ export default function EditorClient() {
         .insert({ page_number: nextNum })
         .select()
         .single();
-      if (pageErr) throw pageErr;
+      if (pageErr) throw new Error(`Gagal buat halaman: ${pageErr.message}`);
 
       // 3. Upload files + insert items
       for (const item of items) {
         let file_url = null;
 
         if (item.file) {
-          const ext    = item.file.name.split('.').pop();
-          const path   = `${newPage.id}/${item.id}.${ext}`;
+          const ext  = item.file.name.split('.').pop();
+          const path = `${newPage.id}/${item.id}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from('diary-media')
             .upload(path, item.file, { cacheControl: '3600', upsert: false });
-          if (upErr) throw upErr;
+          if (upErr) throw new Error(`Upload gagal: ${upErr.message}`);
 
           const { data: urlData } = supabase.storage
             .from('diary-media')
@@ -236,14 +261,14 @@ export default function EditorClient() {
             caption:   item.caption || '',
             note_text: item.note_text || '',
           });
-        if (itemErr) throw itemErr;
+        if (itemErr) throw new Error(`Gagal simpan item: ${itemErr.message}`);
       }
 
       setSaveMsg(`✅ Halaman ${nextNum} berhasil disimpan!`);
       setItems([]);
     } catch (err) {
-      console.error(err);
-      setSaveMsg('❌ Gagal menyimpan. Cek koneksi Supabase.');
+      console.error('Save error:', err);
+      setSaveMsg(`❌ ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -261,7 +286,6 @@ export default function EditorClient() {
       />
     );
   }
-
 
   // ── Editor UI ──
   return (
@@ -326,6 +350,25 @@ export default function EditorClient() {
           />
           <button className={styles.noteBtn} onClick={handleNoteAdd}>+ Tambahkan Catatan</button>
         </section>
+
+        {/* Item list preview */}
+        {items.length > 0 && (
+          <section className={styles.section}>
+            <label className={styles.label}>Di Halaman ({items.length})</label>
+            {items.map(it => (
+              <div key={it.id} className={styles.itemChip}>
+                <span>
+                  {it.type === 'note' ? '📝' : it.type === 'video' ? '🎬' : '📷'}
+                  {' '}
+                  {it.type === 'note'
+                    ? (it.note_text?.slice(0, 20) + (it.note_text?.length > 20 ? '…' : ''))
+                    : (it.template + ' photo')}
+                </span>
+                <button onClick={() => removeItem(it.id)}>✕</button>
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* Save */}
         <section className={styles.section}>
