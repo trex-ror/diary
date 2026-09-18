@@ -1,0 +1,112 @@
+.root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #2a1f14 0%, #0e0a06 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.bookFrame {
+  display: flex;
+  align-items: stretch;
+  filter:
+    drop-shadow(0 30px 60px rgba(0,0,0,0.7))
+    drop-shadow(0 8px 20px rgba(0,0,0,0.5));
+}
+
+.flipContainer {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+/* Page stacks */
+.stackLeft,
+.stackRight {
+  position: relative;
+  align-self: stretch;
+  min-width: 2px;
+  max-width: 24px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.stackLeft {
+  border-radius: 3px 0 0 3px;
+  background: repeating-linear-gradient(
+    to right,
+    #c4b898 0px, #c4b898 1px,
+    #d9ccb0 1px, #d9ccb0 3px
+  );
+  box-shadow: inset -3px 0 6px rgba(0,0,0,0.14);
+  clip-path: polygon(10% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.stackRight {
+  border-radius: 0 3px 3px 0;
+  background: repeating-linear-gradient(
+    to right,
+    #d9ccb0 0px, #d9ccb0 2px,
+    #c4b898 2px, #c4b898 3px
+  );
+  box-shadow: inset 3px 0 6px rgba(0,0,0,0.14);
+  clip-path: polygon(0% 0%, 90% 0%, 100% 100%, 0% 100%);
+}
+
+/* Nav buttons */
+.navBtn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,220,150,0.8);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, transform 0.2s;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.navBtn:hover {
+  background: rgba(255,255,255,0.16);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.navLeft  { left: 20px; }
+.navRight { right: 20px; }
+
+/* Page counter */
+.pageCounter {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Special Elite', serif;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: rgba(200, 170, 100, 0.55);
+  z-index: 50;
+}
+
+/* Editor shortcut link */
+.editorLink {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  font-size: 22px;
+  text-decoration: none;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  z-index: 50;
+}
+.editorLink:hover { opacity: 1; }

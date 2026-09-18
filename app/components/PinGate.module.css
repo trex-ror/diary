@@ -1,0 +1,106 @@
+/* Fullscreen overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #2a1f14 0%, #0e0a06 100%);
+}
+
+/* Card */
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  background: rgba(245, 235, 210, 0.05);
+  border: 1px solid rgba(200, 170, 100, 0.18);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 52px 44px 44px;
+  width: 360px;
+  max-width: 90vw;
+}
+
+/* Shake animation on wrong PIN */
+.shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes shake {
+  10%, 90%  { transform: translateX(-4px); }
+  20%, 80%  { transform: translateX( 6px); }
+  30%, 70%  { transform: translateX(-6px); }
+  40%, 60%  { transform: translateX( 4px); }
+  50%       { transform: translateX(-2px); }
+}
+
+.icon {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.title {
+  font-family: 'IM Fell English', serif;
+  font-weight: 400;
+  font-size: 30px;
+  color: rgba(255, 230, 160, 0.95);
+  text-align: center;
+}
+
+.subtitle {
+  font-family: 'Special Elite', serif;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(200, 170, 100, 0.50);
+  text-align: center;
+}
+
+/* Row of digit boxes */
+.pinRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Each digit box */
+.digitBox {
+  width: 44px;
+  height: 54px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(200, 170, 100, 0.25);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 22px;
+  font-family: 'Caveat', cursive;
+  color: rgba(255, 230, 160, 0.95);
+  outline: none;
+  caret-color: transparent;
+  transition: border-color 0.15s, background 0.15s;
+  /* Hide the dot for single-char password fields */
+  -webkit-text-security: disc;
+}
+
+.digitBox:focus {
+  border-color: rgba(200, 170, 100, 0.65);
+  background: rgba(200, 170, 100, 0.08);
+  box-shadow: 0 0 0 3px rgba(200, 170, 100, 0.10);
+}
+
+.digitBox:not(:placeholder-shown) {
+  border-color: rgba(200, 170, 100, 0.40);
+}
+
+/* Error state */
+.errorBox {
+  border-color: rgba(220, 80, 80, 0.6) !important;
+  background: rgba(220, 80, 80, 0.07) !important;
+}
+
+.errorMsg {
+  font-family: 'Caveat', cursive;
+  font-size: 16px;
+  color: rgba(220, 120, 120, 0.9);
+}

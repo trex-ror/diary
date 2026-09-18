@@ -1,0 +1,323 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IM+Fell+English:ital@0;1&display=swap');
+
+/* ===================================================================
+   DIARY WITH YOU — Global Design System
+   Aesthetic: Vintage handwritten diary, aged paper, warm tones
+   =================================================================== */
+
+:root {
+  /* Vintage paper palette */
+  --paper-cream:      #f5f0e8;
+  --paper-warm:       #ede4d0;
+  --paper-aged:       #d4c5a0;
+  --paper-dark:       #b5a07a;
+  --ink-dark:         #2c2416;
+  --ink-medium:       #4a3f2e;
+  --ink-faded:        #7a6b52;
+  --cover-brown:      #3d2b1f;
+  --cover-mid:        #6b4c35;
+  --cover-light:      #8b6347;
+  --accent-red:       #8b3a3a;
+  --accent-blue:      #3a5a8b;
+  --accent-gold:      #c9933a;
+  --tape-yellow:      rgba(255, 242, 180, 0.80);
+  --tape-clear:       rgba(220, 240, 255, 0.75);
+
+  /* Spacing */
+  --page-padding: 32px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1410;
+  font-family: 'Caveat', cursive;
+  color: var(--ink-dark);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+/* ===================================================================
+   DIARY PAGE BASE — shared by viewer and editor
+   =================================================================== */
+.diary-page {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  /* Aged paper background */
+  background-color: var(--paper-cream);
+  background-image:
+    /* Subtle paper texture noise */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/feColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    /* Warm vignette edges */
+    radial-gradient(ellipse at center, transparent 60%, rgba(180,155,110,0.25) 100%);
+}
+
+/* Grid lines (like a ruled notebook, but subtle) */
+.diary-page.has-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    /* Horizontal lines */
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 27px,
+      rgba(160, 140, 100, 0.20) 27px,
+      rgba(160, 140, 100, 0.20) 28px
+    ),
+    /* Faint vertical margin line */
+    linear-gradient(
+      to right,
+      transparent 48px,
+      rgba(200, 100, 100, 0.12) 48px,
+      rgba(200, 100, 100, 0.12) 49px,
+      transparent 49px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* All content sits above the grid */
+.diary-page > * { position: relative; z-index: 1; }
+
+/* ===================================================================
+   MEMORY PHOTO TEMPLATES
+   =================================================================== */
+
+/* Base */
+.mem-photo {
+  position: absolute;
+  transform-origin: center center;
+  cursor: default;
+  user-select: none;
+}
+
+/* Hover in viewer: subtle lift */
+.diary-page .mem-photo:hover {
+  z-index: 100 !important;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,0.22));
+}
+
+/* ── 1. POLAROID ── */
+.photo-polaroid {
+  background: #f9f7f2;
+  padding: 8px 8px 32px 8px;
+  box-shadow:
+    0 3px 8px rgba(0,0,0,0.18),
+    0 1px 2px rgba(0,0,0,0.10),
+    inset 0 0 0 1px rgba(0,0,0,0.04);
+}
+.photo-polaroid .mem-img {
+  width: 100%;
+  height: calc(100% - 26px);
+  object-fit: cover;
+  display: block;
+  background: var(--paper-aged);
+}
+.photo-polaroid .mem-caption {
+  position: absolute;
+  bottom: 4px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  color: var(--ink-medium);
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 2. VINTAGE PRINT ── */
+.photo-vintage {
+  padding: 3px;
+  background: #ede8df;
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.16),
+    inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+.photo-vintage .mem-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: sepia(0.35) contrast(1.08) brightness(0.92) saturate(0.75);
+}
+
+/* ── 3. TAPED ── */
+.photo-taped {
+  background: transparent;
+}
+.photo-taped .mem-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+}
+/* Top tape strip */
+.photo-taped::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: 55px;
+  height: 20px;
+  background: var(--tape-yellow);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-radius: 1px;
+  z-index: 5;
+}
+
+/* ── 4. NOTE / CATATAN ── */
+.mem-note {
+  position: absolute;
+  background: #fff9e6;
+  border: none;
+  box-shadow:
+    0 3px 10px rgba(0,0,0,0.12),
+    inset 0 0 0 1px rgba(200,170,80,0.25);
+  padding: 14px 16px;
+  font-family: 'Caveat', cursive;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink-medium);
+  overflow: hidden;
+  /* Slight paper fold bottom-right */
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+.mem-note::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 12px; height: 12px;
+  background: linear-gradient(225deg, #e8d890 50%, #fff9e6 50%);
+}
+
+/* ── 5. VIDEO CLIP ── */
+.mem-video {
+  position: absolute;
+  background: #111;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+}
+.mem-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ===================================================================
+   DIARY COVER
+   =================================================================== */
+.diary-cover {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  overflow: hidden;
+
+  /* Leather/aged notebook look */
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(120,80,45,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(60,30,10,0.5) 0%, transparent 55%),
+    linear-gradient(160deg, var(--cover-mid) 0%, var(--cover-brown) 60%, #1e1208 100%);
+
+  /* Subtle leather grain texture via SVG noise */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 30% 20%, rgba(120,80,45,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(60,30,10,0.5) 0%, transparent 55%),
+    linear-gradient(160deg, var(--cover-mid) 0%, var(--cover-brown) 60%, #1e1208 100%);
+}
+
+/* Decorative border frame on cover */
+.diary-cover::before {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(255,220,150,0.20);
+  pointer-events: none;
+}
+.diary-cover::after {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border: 1px solid rgba(255,220,150,0.10);
+  pointer-events: none;
+}
+
+.diary-cover-title {
+  font-family: 'IM Fell English', serif;
+  font-size: clamp(28px, 5vw, 48px);
+  color: rgba(255, 235, 180, 0.95);
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  position: relative;
+  z-index: 1;
+}
+.diary-cover-title em {
+  font-style: italic;
+  color: rgba(255, 210, 130, 0.90);
+}
+
+.diary-cover-subtitle {
+  font-family: 'Special Elite', serif;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200, 170, 100, 0.70);
+  position: relative;
+  z-index: 1;
+}
+
+.diary-cover-year {
+  font-family: 'Caveat', cursive;
+  font-size: 22px;
+  color: rgba(255,220,150,0.55);
+  position: relative;
+  z-index: 1;
+}
+
+/* Decorative divider line on cover */
+.diary-cover-divider {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255,210,120,0.5), transparent);
+  position: relative;
+  z-index: 1;
+}
+
+/* ===================================================================
+   BACK COVER
+   =================================================================== */
+.diary-back-cover {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+    linear-gradient(160deg, #2a1c11 0%, #1e1208 100%);
+  width: 100%;
+  height: 100%;
+}
+
+/* ===================================================================
+   UTILITY
+   =================================================================== */
+.handwriting { font-family: 'Caveat', cursive; }
+.typewriter  { font-family: 'Special Elite', serif; }
+.serif-old   { font-family: 'IM Fell English', serif; }
