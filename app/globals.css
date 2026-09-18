@@ -190,7 +190,6 @@ html, body {
 
 /* ── 5. NOTE / CATATAN ── */
 .mem-note {
-  /* position:absolute dihapus — sekarang ditangani oleh draggableWrapper */
   background: #fff9e6;
   border: none;
   box-shadow:
@@ -198,8 +197,6 @@ html, body {
     inset 0 0 0 1px rgba(200,170,80,0.25);
   padding: 14px 16px;
   font-family: 'Caveat', cursive;
-  font-size: 18px;
-  line-height: 1.5;
   color: var(--ink-medium);
   overflow: hidden;
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
@@ -207,6 +204,13 @@ html, body {
   width: 100%;
   height: auto;
   box-sizing: border-box;
+  container-type: inline-size;
+}
+.note-text-content {
+  font-size: max(16px, 11cqi);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 .mem-note::after {
   content: '';

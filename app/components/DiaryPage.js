@@ -20,7 +20,7 @@ export default function DiaryPage({ page }) {
               className="mem-note"
               style={{ ...commonStyle, minHeight: '80px' }}
             >
-              {item.note_text}
+              <div className="note-text-content">{item.note_text}</div>
             </div>
           );
         }

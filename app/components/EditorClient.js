@@ -113,11 +113,11 @@ function DraggableItem({ item, isSelected, onSelect, onUpdate, onRemove, contain
       {/* Actual styled element */}
       <div className={`${templateClass} ${styles.innerItem}`}>
         {item.type === 'note' && !editing && (
-          <span>{item.note_text || '(catatan kosong)'}</span>
+          <span className="note-text-content">{item.note_text || '(catatan kosong)'}</span>
         )}
         {item.type === 'note' && editing && (
           <textarea
-            className={styles.noteEditArea}
+            className={`note-text-content ${styles.noteEditArea}`}
             defaultValue={item.note_text}
             autoFocus
             onBlur={(e) => {
